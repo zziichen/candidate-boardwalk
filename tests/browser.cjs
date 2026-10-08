@@ -1,42 +1,31 @@
-const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
-const {pathToFileURL}=require('node:url');const {chromium}=require('playwright');
-(async()=>{
-  const browser=await chromium.launch({channel:process.env.SMOKE_BROWSER_CHANNEL||'msedge'});
-  try{for(const width of [1440,768,390,320]){
-    const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'}),errors=[];
-    page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>errors.push(`${r.url()}: ${r.failure()?.errorText}`));
-    await page.addInitScript(()=>{Math.random=()=>.999});
-    await page.goto(process.env.SMOKE_SITE_URL || pathToFileURL(path.resolve(__dirname,'../index.html')).href);
-    assert.equal(await page.locator('.candidate').count(),6);assert.equal(await page.locator('.tile').count(),24);
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    await page.locator('#helpBtn').click();assert.equal(await page.locator('#help').evaluate(d=>d.open),true);await page.keyboard.press('Escape');
-    await page.locator('[data-tile="2"]').click();assert.equal(await page.locator('#tilePreview').evaluate(d=>d.open),true);assert.match(await page.locator('#tilePreview').textContent(),/網路募款/);await page.keyboard.press('Escape');
-    await page.locator('[data-candidate="xia"]').click();await page.locator('#startBtn').click();
-    await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='choice');
-    assert.equal(await page.evaluate(()=>state.players[0].position),6,'Actual d6 movement');
-    await page.locator('[data-choice="0"]').click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');
-    assert.equal(await page.locator('.outcome.success').count(),1);
-    await page.locator('#nextBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='ready'&&state.current===0);
-    assert.equal(await page.evaluate(()=>state.round),2);assert.equal(await page.locator('#log li').count(),6,'All five AIs resolve');
-    await page.evaluate(()=>{state.players[0].position=2;state.phase='choice';state.last={};render();});
-    assert.match(await page.locator('[data-choice="1"]').textContent(),/成功率 17%/);
-    assert.match(await page.locator('[data-choice="1"]').textContent(),/資金 \+32/);
-    const before=await page.evaluate(()=>state.players[0].funds);
-    await page.locator('[data-choice="1"]').click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');assert.equal(await page.evaluate(()=>state.players[0].funds),before+32);
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    const imageErrors=await page.evaluate(async()=>{
-      return Promise.all(candidates.map(c=>new Promise(resolve=>{const image=new Image();image.onload=()=>resolve(null);image.onerror=()=>resolve(c.id);image.src=`assets/candidate-${c.id}.webp`;})));
-    });assert(imageErrors.every(x=>x===null));
-    if(process.env.SMOKE_SCREENSHOT_DIR){fs.mkdirSync(process.env.SMOKE_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SMOKE_SCREENSHOT_DIR,`boardwalk-${width}.png`),fullPage:true});}
-    if(width===1440){
-      for(let round=2;round<=12;round++){
-        await page.locator('#nextBtn').click();await page.waitForFunction(()=>!busy);
-        if(round===12)break;
-        await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='choice');await page.locator('.choice:not(:disabled)').first().click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');
-      }
-      assert.equal(await page.evaluate(()=>state.phase),'over');assert.equal(await page.evaluate(()=>state.history.length),72);assert.match(await page.locator('#event').textContent(),/獲勝/);
-      await page.locator('#nextBtn').click();assert.equal(await page.locator('#selection').isVisible(),true);assert.equal(await page.evaluate(()=>state),null);
-    }
-    assert.deepEqual(errors,[]);console.log(`PASS: ${width}px selection, help, tile preview, dice movement, response, AI turns, cross-specialty +32 funds, assets and layout`);await page.close();
-  }}finally{await browser.close();}
-})().catch(e=>{console.error(e);process.exitCode=1});
+const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs'),{pathToFileURL}=require('node:url'),{chromium}=require('playwright');
+(async()=>{const browser=await chromium.launch({channel:process.env.SMOKE_BROWSER_CHANNEL||'msedge'});try{
+for(const width of [1440,768,390,320]){
+const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'}),errors=[];
+page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>errors.push(r.url()));page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+r.url());});
+await page.addInitScript(()=>{Math.random=()=>0});await page.goto(process.env.SMOKE_SITE_URL||pathToFileURL(path.resolve(__dirname,'../index.html')).href);
+assert.equal(await page.locator('.candidate').count(),4);assert.equal(await page.locator('.tile').count(),48);assert.equal(await page.locator('#stageSteps>span').count(),4);
+const geometry=await page.evaluate(()=>{const b=document.querySelector('#board').getBoundingClientRect(),tiles=[...document.querySelectorAll('.tile')];return {width:b.width,height:b.height,top:tiles.filter(t=>t.style.gridRow==='1').length,left:tiles.filter(t=>t.style.gridColumn==='1').length,right:tiles.filter(t=>t.style.gridColumn==='13').length,bottom:tiles.filter(t=>t.style.gridRow==='13').length,unique:new Set(tiles.map(t=>t.style.gridRow+','+t.style.gridColumn)).size};});
+assert(Math.abs(geometry.width-geometry.height)<1);for(const k of ['top','left','right','bottom'])assert.equal(geometry[k],13);assert.equal(geometry.unique,48);
+assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+await page.locator('#helpBtn').click();assert.equal(await page.locator('#help').evaluate(d=>d.open),true);await page.keyboard.press('Escape');
+await page.locator('[data-tile="1"]').click();assert.match(await page.locator('#tilePreview').textContent(),/三張蓋牌/);await page.keyboard.press('Escape');
+await page.locator('[data-candidate="xia"]').click();await page.locator('#startBtn').click();await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='cards');assert.equal(await page.locator('[data-card]').count(),3);
+await page.locator('[data-card="0"]').click();assert.match(await page.locator('.staff-reveal').textContent(),/募款總管/);await page.locator('#hireBtn').click();assert.equal(await page.evaluate(()=>state.players[0].staff),'finance');assert.equal(await page.evaluate(()=>state.players[0].funds),26);assert.equal(await page.evaluate(()=>state.players[0].image),1);
+await page.evaluate(()=>{Math.random=()=>.999});await page.locator('#nextBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='ready');assert.equal(await page.evaluate(()=>state.history.length),4);assert.equal(await page.evaluate(()=>state.round),2);
+await page.evaluate(()=>{state=rules.create('xia');state.players[0].position=1;Math.random=()=>0;render();});await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='choice');assert.match(await page.locator('[data-choice="1"]').textContent(),/成功率 17%/);assert.match(await page.locator('[data-choice="1"]').textContent(),/資金 \+32/);await page.evaluate(()=>{Math.random=()=>.999});await page.locator('[data-choice="1"]').click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');assert.equal(await page.evaluate(()=>state.players[0].funds),40);
+for(const stage of [0,1,2]){
+await page.evaluate(stage=>{state=rules.create('xia');state.stage=stage;state.players[0].position=stage===0?1:3;state.players[0][stages[stage].metric]=stages[stage].threshold-1;Math.random=()=>0;render();},stage);
+await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='choice');await page.evaluate(()=>{Math.random=()=>.999});await page.locator('[data-choice="0"]').click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');assert.equal(await page.evaluate(()=>state.stage),stage+1);assert.match(await page.locator('.stage-notice').textContent(),new RegExp(['造勢期','衝刺期','決戰期'][stage]));assert.equal(await page.locator('.tile.funds').count(),[6,3,2][stage]);
+}
+await page.evaluate(()=>{state=rules.create('xia');state.stage=3;state.players[0].position=3;state.players[0].funds=20;state.players[0].image=4;Math.random=()=>0;render();});await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='choice');assert.match(await page.locator('[data-choice="1"]').textContent(),/反擊/);await page.locator('[data-choice="1"]').click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');assert.match(await page.locator('.outcome.failure').textContent(),/手段曝光/);assert.equal(await page.evaluate(()=>state.players[0].image),3);
+if(process.env.SMOKE_SCREENSHOT_DIR){fs.mkdirSync(process.env.SMOKE_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.SMOKE_SCREENSHOT_DIR,'boardwalk-'+width+'.png'),fullPage:true});}
+await page.evaluate(()=>{state=rules.create('xia');state.stage=3;state.players[0].position=47;Math.random=()=>.999;render();});await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='choice');assert.equal(await page.evaluate(()=>state.finalRound),1);await page.locator('.choice:not(:disabled)').first().click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');await page.locator('#nextBtn').click();await page.waitForFunction(()=>!busy&&state.phase==='over');assert.equal(await page.evaluate(()=>state.history.length),4);assert.equal(await page.evaluate(()=>state.round),1);
+await page.locator('#nextBtn').click();assert.equal(await page.locator('#selection').isVisible(),true);assert.equal(await page.locator('.tile.funds').count(),12);
+if(width===1440){await page.locator('#startBtn').click();let rounds=0;while(await page.evaluate(()=>state.phase!=='over')){
+assert(rounds++<100);await page.locator('#rollBtn').click();await page.waitForFunction(()=>!busy);if(await page.evaluate(()=>state.phase==='cards')){await page.locator('[data-card="0"]').click();await page.locator('#passStaff').click();}else await page.locator('.choice:not(:disabled)').first().click();await page.waitForFunction(()=>!busy&&state.phase==='resolved');await page.locator('#nextBtn').click();await page.waitForFunction(()=>!busy);
+}assert.equal(await page.evaluate(()=>state.history.length===state.round*4&&state.stageHistory.length===3),true);console.log('PASS: full UI game ended after '+rounds+' fair rounds');}
+const badImages=await page.evaluate(async()=>Promise.all(candidates.map(c=>new Promise(resolve=>{const image=new Image();image.onload=()=>resolve(null);image.onerror=()=>resolve(c.id);image.src='assets/candidate-'+c.id+'.webp';}))));assert(badImages.every(x=>x===null));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
+console.log('PASS: '+width+'px square 48 tiles / 13 per side; four roles; staff flip/hire; 3 AI turns; thresholds; cross-specialty; backfire; fair finish; reset; assets');await page.close();
+}
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1});
