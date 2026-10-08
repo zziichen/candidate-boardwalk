@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#192d35"><title>環城選戰｜事件棋盤桌遊</title><link rel="icon" href="assets/ballot.svg"><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<header><a href="index.html"><img src="assets/ballot.svg" alt="">環城選戰<span>BOARDWALK CAMPAIGN</span></a><div class="header-actions"><span>獨立原型 0.1</span><button id="helpBtn">怎麼玩 ↗</button></div></header>
+<main>
+  <section class="intro"><div><p class="eyebrow">同一座城市，全新的選戰。</p><h1>每一格，都是你的下一個考驗<span>。</span></h1><p>擲骰走進街區，選擇你的回應，把偶遇變成支持。</p></div><span class="edition">24 個事件<br><b>一圈又一圈</b><br>你 + 5 名 AI</span></section>
+  <section id="selection" class="panel"><div class="section-title"><h2>誰代表你出發？</h2><span>沿用六名虛構候選人</span></div><div id="candidates"></div><div class="selection-bottom"><p id="candidateInfo"></p><button id="startBtn" class="primary">開始環城選戰 →</button></div></section>
+  <div class="play-layout">
+    <section class="board-panel panel"><div class="section-title"><h2>小城事件棋盤</h2><span id="roundInfo">準備出發</span></div><p class="board-help">從左下角出發，順時針前進；只處理停留格的事件。</p><div class="board-scroll" tabindex="0" aria-label="環形事件棋盤，可左右捲動"><div id="board"><div class="board-center"><span class="eyebrow">走一段路，做一個決定。</span><h2>小城大選戰</h2><svg viewBox="0 0 400 160" aria-hidden="true"><path d="M0 150h400" stroke="#b5ac94" stroke-width="3"/><path d="M20 150V80l40-25 40 25v70M145 150V50l55-30 55 30v100M300 150V85l38-26 42 26v65" fill="#ddd7c4" stroke="#9caa95" stroke-width="4"/><path d="M13 82 60 49l47 33M132 52l68-39 68 39M290 87l48-35 50 35" fill="none" stroke="#ad7b63" stroke-width="7"/><path d="M35 100h50v20H35M170 65h60v25h-60M315 100h48v20h-48" fill="#f9f3e5"/><path d="M45 150v-25h25v25M186 150v-39h28v39M330 150v-25h20v25" fill="#90a697"/><circle cx="123" cy="124" r="15" fill="#a1b789"/><circle cx="276" cy="126" r="17" fill="#a1b789"/><path d="M123 150v-17M276 150v-9" stroke="#7d8b6d" stroke-width="5"/></svg><div id="dice" aria-label="尚未擲骰">?</div><p id="boardStatus">選一位候選人，讓選戰開始。</p><div class="legend"><span>⌂ 街區</span><span>▤ 議題</span><span>◉ 媒體</span><span>⚡ 突發</span></div></div></div></div></section>
+    <aside><section class="panel event-panel"><div class="section-title"><h2>你的下一個決定</h2><span id="eventTag">等待出發</span></div><div id="event"><p class="empty">骰子決定你遇見什麼。<br>你的選擇決定怎麼回應。</p></div><div id="controls"><button id="rollBtn" class="primary" disabled>擲骰前進</button><button id="nextBtn" class="primary" hidden>繼續選戰 →</button></div></section><section class="panel"><div class="section-title"><h2>即時支持度</h2><span>同分共名次</span></div><div id="ranking"></div><p class="footnote">前段開心、中段平靜、後段緊張。第 12 輪結束後，以支持度決定勝負。</p></section></aside>
+  </div>
+  <section class="panel journal"><div class="section-title"><h2>這一圈的故事</h2><button id="resetBtn">重新開始</button></div><ol id="log" aria-live="polite"><li>街區正在等你出發。</li></ol></section>
+  <footer>環城選戰 / 獨立事件棋盤原型<span>人物、城市與事件皆為虛構。</span></footer>
+</main>
+<dialog id="help"><button id="closeHelp" class="close" aria-label="關閉說明">×</button><p class="eyebrow">一分鐘學會</p><h2>走地圖，回應事件，累積支持。</h2><ol><li>選擇一位候選人；另外五位由 AI 操作。</li><li>擲一顆六面骰，沿棋盤順時針移動。</li><li>停留格會出現事件，選擇不同專長的回應方式。</li><li>再擲一顆判定骰：骰點 + 對應能力 ≥ 目標，即為成功。選項會顯示成功機率、收益與失敗損失。</li><li>跨專長倍率 = 1 +（最高能力 − 應對能力）。不擅長的方式更難成功，成功後會獲得較大的支持或資金收益。</li><li>募款可以累積資金，廣告與造勢需要資金。支出無論成敗都扣除；資金不足時仍有免費選項可回應。</li><li>成功增加支持，失敗扣除支持；支持不會低於零。</li><li>按「繼續選戰」後，五位 AI 依序完成回合。每人都玩滿 12 輪，再結算支持度；同分共同獲勝。</li></ol><p>經過起點不加分，沒有買地、租金或破產。投票日格是街區事件；全局仍在第 12 輪結算。所有格子只有停留時處理。</p><button id="helpDone" class="primary">了解，準備出發</button></dialog>
+<script src="js/data.js"></script><script src="js/rules.js"></script><script src="js/ui.js"></script>
+</body></html>
